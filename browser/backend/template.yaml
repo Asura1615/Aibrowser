@@ -1,0 +1,141 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SAM template for an asynchronous AI assistant with FastAPI, Bedrock, SQS, 
+  and DynamoDB storage.
+
+# -----------------------------------------------------------
+# Globals Section: Define properties common to all functions
+# -----------------------------------------------------------
+Globals:
+  Function:
+    Runtime: python3.10
+    Timeout: 60
+    CodeUri: app/
+    MemorySize: 256
+    
+# -----------------------------------------------------------
+# Resources Section: Define all AWS services to be created
+# -----------------------------------------------------------
+Resources:
+
+  # 1. NEW: EXPLICIT API GATEWAY RESOURCE
+  # We define the API Gateway separately so we can attach
+  # the CORS configuration directly to it.
+  MyApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      # THE CORS CONFIGURATION MOVES HERE
+      Cors:
+        AllowMethods: "'GET,POST,OPTIONS,PUT,DELETE'"
+        AllowOrigin: "'chrome-extension://gmpomcmnkhcgimgjlagjnnidnonomioi'" 
+        AllowHeaders: "'Content-Type,Authorization'"
+
+  # 2. DynamoDB Table for shared state (conversations, results)
+  AgentConversationsTable2:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: AgentConversationsTable2
+      AttributeDefinitions:
+        - AttributeName: sessionId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: sessionId
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  # 3. SQS Queue for asynchronous search processing
+  SearchProcessingQueue2:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: SearchProcessingQueue2
+      VisibilityTimeout: 90
+
+  # 4. FastAPI/Bedrock API Lambda (Synchronous Web Endpoint)
+  ApiAgentFunction2:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: main.handler 
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref AgentConversationsTable2
+          SQS_QUEUE_URL: !Ref SearchProcessingQueue2
+
+      Events:
+        ApiEndpoint:
+          Type: Api
+          Properties:
+            # --- MODIFIED ---
+            # 1. Link to our new explicit API
+            RestApiId: !Ref MyApiGateway
+            # 2. The Cors block is REMOVED from here
+            # ------------------
+            Path: /api/{proxy+}
+            Method: ANY
+            
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AgentConversationsTable2
+        # FIXED: Use the full policy statement instead of the managed policy
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+                - sqs:GetQueueAttributes
+                - sqs:GetQueueUrl
+              Resource: !GetAtt SearchProcessingQueue2.Arn
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: "*"
+
+  # 5. Search Worker Lambda (Asynchronous Processor)
+  # (This resource remains unchanged)
+  SearchWorkerFunction2:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: worker.search.handler
+      Timeout: 90
+      MemorySize: 512
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref AgentConversationsTable2
+      Events:
+        SearchQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt SearchProcessingQueue2.Arn
+            BatchSize: 1
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AgentConversationsTable2
+        - SQSPollerPolicy:
+            QueueName: !GetAtt SearchProcessingQueue2.QueueName
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+               - bedrock:InvokeModel
+              Resource: "*"
+            
+# -----------------------------------------------------------
+# Outputs Section: Display useful information after deployment
+# -----------------------------------------------------------
+Outputs:
+  ApiAgentUrl:
+    Description: "API Gateway endpoint URL for FastAPI Agent Function"
+    # --- MODIFIED ---
+    # We must change ServerlessRestApi to the name of our new explicit API
+    Value: !Sub "https://${MyApiGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+  
+  AgentConversationsTableArn:
+    Description: "ARN of the DynamoDB Table"
+    Value: !GetAtt AgentConversationsTable2.Arn
+    
+  SearchQueueUrl:
+    Description: "URL of the SQS Queue"
+    Value: !Ref SearchProcessingQueue2

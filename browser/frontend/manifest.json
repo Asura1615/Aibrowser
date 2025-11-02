@@ -1,0 +1,52 @@
+{
+    "manifest_version": 3,
+    "name": "Task Navigator Pro",
+    "version": "2.0",
+    "description": "AI-powered task decomposition and navigation with DFS traversal and branch switching",
+    "permissions": [
+        "storage",
+        "tabs",
+        "scripting",
+        "activeTab",
+        "sidePanel"
+    ],
+    "host_permissions": [
+        "<all_urls>"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "omnibox": {
+        "keyword": "task"
+    },
+    "side_panel": {
+        "default_path": "sidepanel.html"
+    },
+    "action": {
+        "default_title": "Open Task Navigator",
+        "default_icon": "icon.png"
+    },
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "navigator.html",
+                "sidepanel.html"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "content_script.js"
+            ],
+            "run_at": "document_idle",
+            "all_frames": false
+        }
+    ]
+}

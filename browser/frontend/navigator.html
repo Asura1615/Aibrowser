@@ -1,0 +1,85 @@
+<!-- navigator.html (fallback page for restricted tabs) -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Navigator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        #task-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #task-label {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        #instructions {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #instructions li {
+            margin-bottom: 8px;
+            padding: 8px;
+            background: #f9f9f9;
+            border-left: 4px solid #007acc;
+        }
+
+        #navigation-info {
+            margin-top: 20px;
+            padding: 10px;
+            background: #e7f3ff;
+            border-radius: 4px;
+            font-size: 0.9em;
+            color: #005a9e;
+        }
+
+        #progress {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        #error-msg {
+            color: red;
+            padding: 10px;
+            background: #ffe6e6;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="task-container" style="display: none;">
+        <div id="task-label">Loading tasks...</div>
+        <ul id="instructions"></ul>
+        <div id="progress">Progress: 0 / 0</div>
+    </div>
+    <div id="error-msg" style="display: none;"></div>
+    <div id="thinking" style="text-align: center; padding: 50px;">
+        <h2>Thinking...</h2>
+        <p>Generating your task plan.</p>
+    </div>
+    <div id="navigation-info" style="display: none;">
+        Use ← Arrow Left to go back, → Arrow Right to proceed to next task.
+    </div>
+
+    <script src="navigator.js"></script>
+</body>
+
+</html>

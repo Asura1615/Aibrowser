@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Navigator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #2c3e50;
+            padding: 16px;
+            font-size: 14px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .header h1 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .header .status {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            font-size: 14px;
+            color: #667eea;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .card h2::before {
+            content: "▶";
+            font-size: 10px;
+        }
+
+        .task-label {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #2c3e50;
+            line-height: 1.4;
+        }
+
+        .instructions {
+            list-style: none;
+            padding: 0;
+        }
+
+        .instructions li {
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-left: 3px solid #667eea;
+            margin-bottom: 6px;
+            border-radius: 4px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .instructions li::before {
+            content: "• ";
+            color: #667eea;
+            font-weight: bold;
+            margin-right: 4px;
+        }
+
+        .progress-bar {
+            background: #e9ecef;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 8px 0;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .nav-btn.prev {
+            background: #6c757d;
+            color: white;
+        }
+
+        .nav-btn.next {
+            background: #667eea;
+            color: white;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .preview {
+            margin-top: 8px;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .preview-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 0;
+            color: #495057;
+        }
+
+        .preview-item .icon {
+            color: #667eea;
+        }
+
+        .loading,
+        .error {
+            text-align: center;
+            padding: 32px 16px;
+        }
+
+        .loading .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error {
+            color: #dc3545;
+        }
+
+        .kbd {
+            display: inline-block;
+            padding: 2px 6px;
+            background: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 11px;
+        }
+
+        .hint {
+            background: #e7f3ff;
+            border-left: 3px solid #0066cc;
+            padding: 8px 12px;
+            margin-top: 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #004085;
+        }
+
+        .goal-section {
+            background: #fff3cd;
+            border-left: 3px solid #ffc107;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+        }
+
+        .goal-section .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #856404;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .goal-section .text {
+            font-size: 13px;
+            color: #664d03;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 16px;
+            color: #6c757d;
+        }
+
+        .empty-state h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .empty-state .example {
+            margin-top: 16px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #667eea;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Loading tasks...</p>
+    </div>
+
+    <div id="error" class="error" style="display: none;">
+        <p>⚠️ <span id="error-message"></span></p>
+    </div>
+
+    <div id="empty" class="empty-state" style="display: none;">
+        <h3>🚀 Get Started</h3>
+        <p>Type <strong>task</strong> in your address bar followed by your goal.</p>
+        <div class="example">task setup python development</div>
+    </div>
+
+    <div id="content" style="display: none;">
+        <div class="header">
+            <h1>📋 Task Navigator</h1>
+            <div class="status" id="status">Ready</div>
+        </div>
+
+        <div class="goal-section" id="goal-section" style="display: none;">
+            <div class="label">Your Goal</div>
+            <div class="text" id="goal-text"></div>
+        </div>
+
+        <div class="card">
+            <h2>Current Task</h2>
+            <div class="task-label" id="task-label">Loading...</div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+            </div>
+            <div class="progress-text" id="progress-text">0 / 0</div>
+        </div>
+
+        <div class="card" id="instructions-card" style="display: none;">
+            <h2>Instructions</h2>
+            <ul class="instructions" id="instructions-list"></ul>
+        </div>
+
+        <div class="card">
+            <h2>Navigation</h2>
+            <div class="nav-buttons">
+                <button class="nav-btn prev" id="prev-btn">
+                    ◀ Previous
+                </button>
+                <button class="nav-btn next" id="next-btn">
+                    Next ▶
+                </button>
+            </div>
+
+            <div class="preview">
+                <div class="preview-item">
+                    <span class="icon">←</span>
+                    <span id="prev-preview">Start</span>
+                </div>
+                <div class="preview-item">
+                    <span class="icon">→</span>
+                    <span id="next-preview">End</span>
+                </div>
+            </div>
+
+            <div class="hint">
+                <strong>Keyboard shortcuts:</strong><br>
+                <span class="kbd">Ctrl</span> + <span class="kbd">Alt</span> + <span class="kbd">←</span> Previous<br>
+                <span class="kbd">Ctrl</span> + <span class="kbd">Alt</span> + <span class="kbd">→</span> Next
+            </div>
+        </div>
+    </div>
+
+    <script src="sidepanel.js"></script>
+</body>
+
+</html>
