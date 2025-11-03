@@ -89,5 +89,3 @@ Pick a license that matches how you want this repo used. `MIT` is a common, perm
 3. Arpita Gupta
 
 ---
-
-If you want this as a ready-to-commit `README.md` file in the repository or want a more prescriptive “Getting started” section with exact environment variables and manifest details, I can drop that in too.
